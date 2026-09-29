@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChunkLab Studio — Tudo Sobre Chunks de Texto & Fatiamento Interativo</title>
+  <meta name="description" content="Laboratório visual definitivo sobre chunking de texto para LLMs, RAG e NLP. Teste separadores por tamanho, pontuação, símbolos, regex e linhas em tempo real.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0d14;
+      --bg-card: rgba(18, 22, 34, 0.75);
+      --bg-card-hover: rgba(25, 32, 50, 0.85);
+      --bg-input: #0f1422;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: #6366f1;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-glow: rgba(99, 102, 241, 0.25);
+      --secondary: #06b6d4;
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+      --shadow-glow: 0 10px 30px -10px var(--primary-glow);
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.1) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 20, 34, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Header & Navigation */
+    header {
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(10, 13, 20, 0.8);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 0.85rem 2rem;
+    }
+
+    .header-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .logo-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+
+    .logo-title {
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #fff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .nav-btn {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+    }
+
+    .nav-btn:hover, .nav-btn.active {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
+      border-color: transparent;
+      color: white;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+    .nav-btn.primary:hover {
+      box-shadow: 0 6px 18px rgba(99, 102, 241, 0.45);
+      transform: translateY(-1px);
+    }
+
+    /* Container Layout */
+    .app-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem 4rem;
+    }
+
+    /* Hero Banner */
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(30, 27, 75, 0.4), rgba(15, 23, 42, 0.5));
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 2rem 2.5rem;
+      margin-bottom: 2rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-banner::after {
+      content: "";
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-content h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+
+    .hero-content h1 span {
+      background: linear-gradient(90deg, #818cf8, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-content p {
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 760px;
+    }
+
+    .hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .hero-tag {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .hero-tag .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+    }
+
+    /* Main Workspace Grid */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 1100px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero-banner {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Panels / Cards */
+    .panel {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .panel-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .panel-title svg {
+      color: var(--primary);
+    }
+
+    /* Form & Controls */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-label .label-tip {
+      font-size: 0.75rem;
+      font-weight: normal;
+      color: var(--text-subtle);
+    }
+
+    textarea, input[type="text"], input[type="number"], select {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      padding: 0.7rem 0.85rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    textarea {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      resize: vertical;
+      min-height: 160px;
+    }
+
+    textarea:focus, input:focus, select:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .text-counter-bar {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+      margin-top: 0.4rem;
+      font-family: var(--font-mono);
+    }
+
+    /* Quick Presets Buttons */
+    .presets-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .preset-chip {
+      font-size: 0.75rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .preset-chip:hover {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: #fff;
+    }
+
+    /* Strategy Tabs */
+    .strategy-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .strategy-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+      padding: 0.75rem 0.85rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s ease;
+      color: var(--text-muted);
+    }
+
+    .strategy-btn:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .strategy-btn.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.08));
+      border-color: var(--primary);
+      color: #fff;
+      box-shadow: 0 0 15px -3px var(--primary-glow);
+    }
+
+    .strategy-btn .strat-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .strategy-btn .strat-desc {
+      font-size: 0.7rem;
+      color: var(--text-subtle);
+      line-height: 1.3;
+    }
+
+    /* Strategy Sub-panels */
+    .strategy-panel {
+      display: none;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    .strategy-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Sliders and Ranges */
+    .range-wrap {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .range-wrap input[type="range"] {
+      flex: 1;
+      height: 6px;
+      -webkit-appearance: none;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      outline: none;
+    }
+
+    .range-wrap input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--primary-glow);
+      transition: transform 0.1s;
+    }
+
+    .range-wrap input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    .range-val {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      min-width: 50px;
+      text-align: right;
+      color: var(--secondary);
+      font-weight: 600;
+    }
+
+    /* Checkbox & Switch */
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* Action Buttons */
+    .btn-block {
+      width: 100%;
+      padding: 0.85rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: var(--radius-md);
+      border: none;
+      background: linear-gradient(135deg, var(--primary), #4338ca);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 14px var(--primary-glow);
+      transition: all 0.2s ease;
+    }
+
+    .btn-block:hover {
+      background: linear-gradient(135deg, #4f46e5, #3730a3);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    /* Stats Ribbon */
+    .stats-ribbon {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 680px) {
+      .stats-ribbon {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: #fff;
+    }
+
+    .stat-val.highlight {
+      color: var(--secondary);
+    }
+
+    /* Output Controls & Views */
+    .output-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .view-modes {
+      display: flex;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.25rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      gap: 0.2rem;
+    }
+
+    .view-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s;
+    }
+
+    .view-btn:hover {
+      color: #fff;
+    }
+
+    .view-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+    }
+
+    .export-btns {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-sm {
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s;
+    }
+
+    .btn-sm:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Chunks Container */
+    .chunks-wrapper {
+      min-height: 380px;
+    }
+
+    /* Cards View */
+    .chunks-cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .chunk-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .chunk-card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      background: var(--bg-card-hover);
+      transform: translateY(-1px);
+    }
+
+    .chunk-card-header {
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+    }
+
+    .chunk-badge-id {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: #fff;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      padding: 0.15rem 0.55rem;
+      border-radius: 9999px;
+    }
+
+    .chunk-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+    }
+
+    .chunk-card-body {
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.55;
+      color: var(--text-main);
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    .chunk-card-footer {
+      padding: 0.5rem 1rem;
+      background: rgba(255, 255, 255, 0.015);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chunk-card-footer .copy-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-subtle);
+      cursor: pointer;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: color 0.15s;
+    }
+
+    .chunk-card-footer .copy-btn:hover {
+      color: var(--primary);
+    }
+
+    /* Highlight View (Inline Color Bands) */
+    .chunks-highlight-view {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .chunk-span {
+      padding: 0.2rem 0.4rem;
+      margin: 0.1rem 0;
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s;
+      border-bottom: 2px solid transparent;
+    }
+
+    .chunk-span:hover {
+      filter: brightness(1.25);
+      border-bottom-color: #fff;
+    }
+
+    /* Color variations for chunks */
+    .chunk-color-0 { background: rgba(99, 102, 241, 0.25); color: #c7d2fe; }
+    .chunk-color-1 { background: rgba(6, 182, 212, 0.25); color: #a5f3fc; }
+    .chunk-color-2 { background: rgba(16, 185, 129, 0.25); color: #a7f3d0; }
+    .chunk-color-3 { background: rgba(245, 158, 11, 0.25); color: #fde68a; }
+    .chunk-color-4 { background: rgba(244, 63, 94, 0.25); color: #fecdd3; }
+    .chunk-color-5 { background: rgba(168, 85, 247, 0.25); color: #e9d5ff; }
+
+    /* Table View */
+    .chunks-table-view {
+      overflow-x: auto;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+    }
+
+    .chunks-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    .chunks-table th {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.75rem 1rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-subtle);
+      font-family: var(--font-sans);
+    }
+
+    .chunks-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      vertical-align: top;
+    }
+
+    .chunks-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-subtle);
+    }
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1rem;
+      opacity: 0.4;
+    }
+
+    /* Overlap tag highlight */
+    .overlap-tag {
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px dashed rgba(245, 158, 11, 0.4);
+      color: #fde68a;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+    }
+
+    /* Educational Section (Tudo Sobre Chunks) */
+    .edu-section {
+      margin-top: 4rem;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 3.5rem;
+    }
+
+    .edu-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .edu-header h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+
+    .edu-header p {
+      color: var(--text-muted);
+      max-width: 700px;
+      margin: 0 auto;
+      font-size: 1rem;
+    }
+
+    .edu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .edu-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .edu-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+    }
+
+    .edu-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .edu-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .edu-card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .edu-card ul {
+      list-style-type: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .edu-card ul li {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .edu-card ul li span.bullet {
+      color: var(--secondary);
+      font-weight: bold;
+    }
+
+    /* Comparison Table in Edu */
+    .edu-table-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .edu-table-card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Notification Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(18, 22, 34, 0.95);
+      border: 1px solid var(--border-focus);
+      color: #fff;
+      padding: 0.85rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 999;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      color: var(--text-subtle);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    footer a:hover {
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-inner">
+      <a href="#" class="logo-container">
+        <div class="logo-badge">✂</div>
+        <div>
+          <div class="logo-title">ChunkLab Studio</div>
+          <div class="logo-subtitle">Text Splitting & RAG Architecture</div>
+        </div>
+      </a>
+      <nav class="header-nav">
+        <a href="#lab-section" class="nav-btn active">Laboratório Interativo</a>
+        <a href="#edu-section" class="nav-btn">Guia Teórico Completo</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="app-container" id="lab-section">
+    <!-- Hero Banner -->
+    <div class="hero-banner">
+      <div class="hero-content">
+        <h1>O Fatiador Definitivo de <span>Chunks de Texto</span></h1>
+        <p>
+          Divida qualquer texto em blocos coerentes para LLMs, RAG, Bancos Vetoriais ou Processamento de Linguagem Natural. Escolha entre divisão por tamanho fixo com overlap, pontuações, símbolos customizados, quebras de linhas ou divisão recursiva inteligente.
+        </p>
+        <div class="hero-tags">
+          <span class="hero-tag"><span class="dot"></span> Compatível com LangChain & LlamaIndex</span>
+          <span class="hero-tag">🎯 Análise de Tokens & Caracteres</span>
+          <span class="hero-tag">⚡ Pré-visualização Colorida em Tempo Real</span>
+          <span class="hero-tag">📦 Exportação JSON / CSV / TXT</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workspace Grid -->
+    <div class="workspace-grid">
+      
+      <!-- Left Panel: Input & Settings -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            Entrada de Texto & Estratégia
+          </div>
+        </div>
+
+        <!-- Presets -->
+        <div class="form-group">
+          <label class="form-label">
+            <span>Carregar Exemplo Rápido</span>
+            <span class="label-tip">Clique para testar</span>
+          </label>
+          <div class="presets-row">
+            <button class="preset-chip" onclick="loadPreset('rag')">🤖 Artigo RAG & IA</button>
+            <button class="preset-chip" onclick="loadPreset('juridico')">⚖️ Texto Legal / Contrato</button>
+            <button class="preset-chip" onclick="loadPreset('dialogo')">💬 Diálogo de Suporte</button>
+            <button class="preset-chip" onclick="loadPreset('markdown')">📝 Markdown com Títulos</button>
+          </div>
+        </div>
+
+        <!-- Textarea -->
+        <div class="form-group">
+          <div class="form-label">
+            <span>Texto Original</span>
+            <span class="label-tip" id="clearTextBtn" style="cursor:pointer; color: var(--accent-rose);">Limpar</span>
+          </div>
+          <textarea id="inputText" placeholder="Cole ou digite seu texto aqui para ser fatiado em chunks..."></textarea>
+          <div class="text-counter-bar">
+            <span id="charCount">0 caracteres</span>
+            <span id="wordCount">0 palavras</span>
+            <span id="tokenCount">~0 tokens</span>
+          </div>
+        </div>
+
+        <!-- Strategy Selector Tabs -->
+        <div class="form-group">
+          <label class="form-label">
+            <span>Método de Separação (Chunking)</span>
+            <span class="label-tip" id="currentStratLabel">Tamanho Fixo</span>
+          </label>
+          <div class="strategy-tabs">
+            <button class="strategy-btn active" data-strategy="size" onclick="switchStrategy('size')">
+              <span class="strat-name">📏 Tamanho Fixo</span>
+              <span class="strat-desc">Janela deslizante com overlap</span>
+            </button>
+            <button class="strategy-btn" data-strategy="punctuation" onclick="switchStrategy('punctuation')">
+              <span class="strat-name">🔤 Pontuação</span>
+              <span class="strat-desc">Sentenças (. ! ? ; e vírgulas)</span>
+            </button>
+            <button class="strategy-btn" data-strategy="symbol" onclick="switchStrategy('symbol')">
+              <span class="strat-name">🔣 Símbolo / Regex</span>
+              <span class="strat-desc">Delimitador exato ou expressão</span>
+            </button>
+            <button class="strategy-btn" data-strategy="lines" onclick="switchStrategy('lines')">
+              <span class="strat-name">📄 Linhas / Parágrafos</span>
+              <span class="strat-desc">Quebras simples (\n) ou duplas</span>
+            </button>
+            <button class="strategy-btn" data-strategy="recursive" onclick="switchStrategy('recursive')" style="grid-column: span 2;">
+              <span class="strat-name">🧠 Divisor Recursivo Inteligente</span>
+              <span class="strat-desc">Hierarquia automática (parágrafos → frases → palavras → caracteres)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Subpanel: Size Settings -->
+        <div id="strat-size" class="strategy-panel active">
+          <div class="form-group">
+            <label class="form-label">
+              <span>Unidade de Medida</span>
+            </label>
+            <select id="sizeUnit" onchange="runChunking()">
+              <option value="chars" selected>Caracteres</option>
+              <option value="words">Palavras</option>
+              <option value="tokens">Tokens Estimados (~4 chars)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="form-label">
+              <span>Tamanho do Chunk (Chunk Size)</span>
+              <span class="range-val" id="sizeVal">300</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="sizeRange" min="20" max="1500" step="10" value="300" oninput="updateRange('sizeRange', 'sizeVal'); runChunking();">
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">
+              <span>Sobreposição (Overlap)</span>
+              <span class="range-val" id="overlapVal">50</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="overlapRange" min="0" max="500" step="5" value="50" oninput="updateRange('overlapRange', 'overlapVal'); runChunking();">
+            </div>
+            <span class="label-tip" style="margin-top: 0.35rem; display: block;">Evita perda de contexto nas bordas das frases cortadas.</span>
+          </div>
+        </div>
+
+        <!-- Subpanel: Punctuation Settings -->
+        <div id="strat-punctuation" class="strategy-panel">
+          <div class="form-group">
+            <label class="form-label"><span>Tipos de Pontuação</span></label>
+            <select id="punctType" onchange="runChunking()">
+              <option value="sentence" selected>Fim de Sentença (. ! ? …)</option>
+              <option value="comma">Todas as pausas (. ! ? , ; :)</option>
+              <option value="period_only">Apenas Ponto Final (.)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span>Agrupamento de Sentenças</span></label>
+            <div class="range-wrap">
+              <input type="range" id="punctGroupRange" min="1" max="10" step="1" value="1" oninput="updateRange('punctGroupRange', 'punctGroupVal'); runChunking();">
+              <span class="range-val" id="punctGroupVal">1</span>
+            </div>
+            <span class="label-tip" style="margin-top: 0.35rem; display: block;">Quantas sentenças por chunk (ex: 2 ou 3 formam um bloco coeso).</span>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="keepPunct" checked onchange="runChunking()">
+              <span>Preservar o sinal de pontuação no final do chunk</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Subpanel: Symbol Settings -->
+        <div id="strat-symbol" class="strategy-panel">
+          <div class="form-group">
+            <label class="form-label"><span>Delimitador ou Padrão</span></label>
+            <input type="text" id="symbolInput" value="---" placeholder="Ex: ---, ###, |, [SECTION]" oninput="runChunking()">
+          </div>
+          <div class="presets-row" style="margin-top: -0.5rem; margin-bottom: 1rem;">
+            <button class="preset-chip" onclick="setSymbol('---')">--- (Divisor)</button>
+            <button class="preset-chip" onclick="setSymbol('###')">### (H3)</button>
+            <button class="preset-chip" onclick="setSymbol('\\|')">| (Pipe)</button>
+            <button class="preset-chip" onclick="setSymbol('\\*\\*\\*')">*** (Asteriscos)</button>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="isRegex" onchange="runChunking()">
+              <span>Interpretar como Expressão Regular (Regex)</span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="trimChunks" checked onchange="runChunking()">
+              <span>Remover espaços em branco extras (Trim) e descartar vazios</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Subpanel: Lines / Paragraphs Settings -->
+        <div id="strat-lines" class="strategy-panel">
+          <div class="form-group">
+            <label class="form-label"><span>Modo de Quebra</span></label>
+            <select id="lineMode" onchange="runChunking()">
+              <option value="paragraph" selected>Parágrafos Inteiros (Quebra Dupla \n\n)</option>
+              <option value="single_line">Linhas Individuais (Quebra Simples \n)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="form-label">
+              <span>Agrupar por Bloco</span>
+              <span class="range-val" id="lineGroupVal">1</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="lineGroupRange" min="1" max="15" step="1" value="1" oninput="updateRange('lineGroupRange', 'lineGroupVal'); runChunking();">
+            </div>
+            <span class="label-tip" style="margin-top: 0.35rem; display: block;">Quantos parágrafos ou linhas por chunk.</span>
+          </div>
+        </div>
+
+        <!-- Subpanel: Recursive Settings -->
+        <div id="strat-recursive" class="strategy-panel">
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.85rem;">
+            O método mais popular em pipelines LangChain e LlamaIndex. Tenta dividir primeiro por parágrafos duplos (<code>\n\n</code>), depois linhas (<code>\n</code>), depois espaços e por fim caracteres se necessário, garantindo que nenhum bloco ultrapasse o limite.
+          </p>
+          <div class="form-group">
+            <div class="form-label">
+              <span>Tamanho Alvo (Caracteres)</span>
+              <span class="range-val" id="recSizeVal">350</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="recSizeRange" min="50" max="2000" step="25" value="350" oninput="updateRange('recSizeRange', 'recSizeVal'); runChunking();">
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">
+              <span>Overlap Recursivo (Caracteres)</span>
+              <span class="range-val" id="recOverlapVal">60</span>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="recOverlapRange" min="0" max="400" step="10" value="60" oninput="updateRange('recOverlapRange', 'recOverlapVal'); runChunking();">
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <button class="btn-block" onclick="runChunking()">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Re-processar Chunks
+        </button>
+
+      </div>
+
+      <!-- Right Panel: Visualization & Stats -->
+      <div>
+        
+        <!-- Stats Ribbon -->
+        <div class="stats-ribbon">
+          <div class="stat-card">
+            <span class="stat-label">Total de Chunks</span>
+            <span class="stat-val highlight" id="statTotalChunks">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Tam. Médio (Chars)</span>
+            <span class="stat-val" id="statAvgChars">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Média Tokens / Chunk</span>
+            <span class="stat-val" id="statAvgTokens">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Menor / Maior</span>
+            <span class="stat-val" id="statMinMax" style="font-size: 1.1rem; padding-top: 0.2rem;">0 / 0</span>
+          </div>
+        </div>
+
+        <!-- Output Card -->
+        <div class="panel">
+          <div class="output-bar">
+            <!-- View Modes -->
+            <div class="view-modes">
+              <button class="view-btn active" data-view="cards" onclick="setViewMode('cards')">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                Cartões
+              </button>
+              <button class="view-btn" data-view="highlight" onclick="setViewMode('highlight')">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+                Visual Contínuo
+              </button>
+              <button class="view-btn" data-view="table" onclick="setViewMode('table')">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                Tabela
+              </button>
+            </div>
+
+            <!-- Export Buttons -->
+            <div class="export-btns">
+              <button class="btn-sm" onclick="copyAllJSON()">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                Copiar JSON
+              </button>
+              <button class="btn-sm" onclick="exportFile('json')">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Baixar .json
+              </button>
+              <button class="btn-sm" onclick="exportFile('txt')">
+                Baixar .txt
+              </button>
+              <button class="btn-sm" onclick="exportFile('csv')">
+                Baixar .csv
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Output View Container -->
+          <div class="chunks-wrapper" id="chunksContainer">
+            <!-- Injected via JavaScript -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Educational & Deep Dive Guide Section -->
+    <section class="edu-section" id="edu-section">
+      <div class="edu-header">
+        <h2>Guia Completo: O que você precisa saber sobre Chunks</h2>
+        <p>Entenda por que o fatiamento de dados é o coração de qualquer arquitetura moderna com LLMs, agentes autônomos e bancos de dados vetoriais.</p>
+      </div>
+
+      <div class="edu-grid">
+        
+        <div class="edu-card">
+          <div class="edu-icon-wrap">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+          </div>
+          <h3>1. O que é Chunking e por que é essencial?</h3>
+          <p>
+            Modelos de Linguagem (LLMs) possuem limites rígidos ou de custo na janela de contexto. Além disso, modelos de Embedding perdem precisão se tentarem resumir um livro inteiro em um único vetor numérico.
+          </p>
+          <ul>
+            <li><span class="bullet">✔</span> <strong>Precisão Semântica:</strong> Chunks focados capturam a essência de um tópico específico.</li>
+            <li><span class="bullet">✔</span> <strong>Eficiência de Custo:</strong> Você envia apenas o trecho relevante no prompt do modelo.</li>
+            <li><span class="bullet">✔</span> <strong>Filtro de Ruído:</strong> Evita "Lost in the Middle" (quando o modelo ignora o meio de contextos gigantes).</li>
+          </ul>
+        </div>
+
+        <div class="edu-card">
+          <div class="edu-icon-wrap">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+          </div>
+          <h3>2. O Segredo do Overlap (Sobreposição)</h3>
+          <p>
+            O <em>chunk overlap</em> é a repetição intencional dos últimos tokens do bloco anterior no início do próximo bloco.
+          </p>
+          <ul>
+            <li><span class="bullet">✔</span> <strong>Preservação de Contexto:</strong> Garante que frases cortadas ao meio não percam sentido.</li>
+            <li><span class="bullet">✔</span> <strong>Resolução de Anáforas:</strong> Mantém pronomes (ex: "ele", "isso") vinculados ao sujeito citado na frase anterior.</li>
+            <li><span class="bullet">✔</span> <strong>Regra de Ouro:</strong> Recomenda-se normalmente entre <strong>10% e 20%</strong> do tamanho do chunk como overlap.</li>
+          </ul>
+        </div>
+
+        <div class="edu-card">
+          <div class="edu-icon-wrap">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+          </div>
+          <h3>3. Qual o tamanho ideal de um Chunk?</h3>
+          <p>
+            Não existe fórmula mágica, mas sim um balanço entre <em>especificidade</em> e <em>amplitude temática</em>:
+          </p>
+          <ul>
+            <li><span class="bullet">🔹</span> <strong>Pequenos (100–300 tokens):</strong> Excelente para busca pontual de fatos ou respostas diretas em FAQ.</li>
+            <li><span class="bullet">🔹</span> <strong>Médios (400–800 tokens):</strong> O padrão da indústria para a maioria dos textos explicativos e documentações.</li>
+            <li><span class="bullet">🔹</span> <strong>Grandes (1000+ tokens):</strong> Para análise comparativa profunda ou geração de resumos longos.</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Comparative Strategies Table -->
+      <div class="edu-table-card">
+        <h3>Comparativo Prático de Estratégias de Chunking</h3>
+        <div class="chunks-table-view">
+          <table class="chunks-table">
+            <thead>
+              <tr>
+                <th style="width: 22%;">Estratégia</th>
+                <th style="width: 28%;">Como Funciona</th>
+                <th style="width: 25%;">Vantagens</th>
+                <th style="width: 25%;">Quando Utilizar</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Tamanho Fixo (Fixed-Size)</strong></td>
+                <td>Conta N caracteres ou palavras e quebra rigidamente com janela deslizante.</td>
+                <td>Previsível, rápido e computacionalmente muito leve.</td>
+                <td>Dados uniformes ou onde a estrutura sintática é secundária.</td>
+              </tr>
+              <tr>
+                <td><strong>Por Sentença / Pontuação</strong></td>
+                <td>Usa delimitadores como ponto, interrogação e reticências para delimitar frases completas.</td>
+                <td>Preserva o pensamento gramatical e semântico natural.</td>
+                <td>Textos jornalísticos, literatura, transcrições de áudio e atas.</td>
+              </tr>
+              <tr>
+                <td><strong>Por Símbolo / Regex</strong></td>
+                <td>Quebra com base em caracteres específicos pré-definidos (ex: <code>---</code>, <code>###</code>, <code>[PAGE]</code>).</td>
+                <td>Respeita divisões humanas deliberadas já existentes no documento.</td>
+                <td>Markdowns técnicos, logs, contratos com cláusulas e arquivos CSV.</td>
+              </tr>
+              <tr>
+                <td><strong>Por Linhas / Parágrafos</strong></td>
+                <td>Divide em quebras simples de linha ou blocos separados por linha em branco.</td>
+                <td>Mantém a unidade lógica visual do autor original.</td>
+                <td>Poemas, listas de compras, roteiros e artigos divididos por parágrafos.</td>
+              </tr>
+              <tr>
+                <td><strong>Divisor Recursivo (LangChain / LlamaIndex)</strong></td>
+                <td>Tenta o maior separador lógico primeiro (parágrafo); se o pedaço for grande demais, desce recursivamente para linha, espaço ou char.</td>
+                <td>Evita quebrar sentenças ao meio mantendo todos os blocos no limite configurado.</td>
+                <td><strong>Recomendado para 90% dos pipelines profissionais de RAG.</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+    <span id="toastMsg">Mensagem</span>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>ChunkLab Studio — Laboratório aberto para fatiamento de dados em inteligência artificial e NLP.</p>
+    <p style="margin-top: 0.5rem; font-size: 0.78rem;">Desenvolvido com Vanilla HTML5, CSS3 Moderno e JavaScript Puro.</p>
+  </footer>
+
+  <script>
+    // --- Sample Presets Data ---
+    const PRESETS = {
+      rag: `O que é RAG (Retrieval-Augmented Generation)?
+A geração aumentada por recuperação (RAG) é uma técnica fundamental na inteligência artificial moderna. Em vez de depender apenas dos pesos estáticos aprendidos durante o pré-treinamento, o modelo de linguagem (LLM) consulta uma base de conhecimento externa antes de formular sua resposta.
+
+Como funciona a arquitetura de um pipeline RAG?
+Primeiro, os documentos corporativos são fatiados em pequenos blocos conhecidos como "chunks". Cada chunk é transformado em uma representação vetorial densa por um modelo de embedding e armazenado em um banco de dados vetorial.
+Quando o usuário faz uma pergunta, a consulta também é convertida em um vetor. O sistema calcula a similaridade por cosseno entre o vetor da pergunta e os chunks catalogados, resgatando os blocos mais relevantes.
+
+Por que o fatiamento adequado é crítico?
+Se o chunk for excessivamente grande, a busca vetorial dilui o foco semântico e encarece a inferência com tokens desnecessários. Se for muito curto, o modelo de linguagem recebe fragmentos descontextualizados e pode alucinar ou não compreender a resposta completa.`,
+
+      juridico: `CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE TECNOLOGIA
+CLÁUSULA PRIMEIRA - DO OBJETO:
+O presente instrumento tem por objeto a prestação de serviços continuados de consultoria em inteligência artificial, engenharia de dados e desenvolvimento de pipelines de recuperação semântica.
+---
+CLÁUSULA SEGUNDA - DAS OBRIGAÇÕES DA CONTRATADA:
+1.1 A CONTRATADA compromete-se a manter sigilo absoluto sobre todas as informações sensíveis e bases vetoriais disponibilizadas pela CONTRATANTE.
+1.2 Disponibilizar suporte técnico especializado em dias úteis no horário comercial.
+---
+CLÁUSULA TERCEIRA - DA REMUNERAÇÃO E FORMA DE PAGAMENTO:
+Pelos serviços pactuados, a CONTRATANTE pagará à CONTRATADA o valor mensal líquido de R$ 15.000,00 (quinze mil reais), com vencimento todo dia 10 de cada mês.
+---
+CLÁUSULA QUARTA - DA RESCISÃO:
+Qualquer das partes poderá rescindir o presente contrato mediante aviso prévio por escrito de 30 (trinta) dias, sem incidência de penalidades rescisórias adicionais.`,
+
+      dialogo: `[09:14] Cliente: Olá, gostaria de saber o status do meu pedido #98432.
+[09:15] Atendente: Bom dia! Seja bem-vindo ao atendimento da MegaStore.
+[09:15] Atendente: Vou verificar no sistema o seu código de rastreamento neste instante. Só um momento, por favor.
+[09:17] Atendente: Encontrei! O pacote foi despachado ontem às 18:30 pela transportadora rápida. A previsão de entrega é até sexta-feira.
+[09:18] Cliente: Perfeito, muito obrigado pelo retorno ágil!
+[09:19] Atendente: Por nada! Posso ajudar com mais alguma dúvida hoje?`,
+
+      markdown: `# Guia de Engenharia de Prompts
+
+## 1. Princípios Básicos
+- Seja claro e direto.
+- Forneça exemplos no estilo Few-Shot.
+- Delimite claramente o contexto com tags como <contexto> ou backticks.
+
+## 2. Técnicas Avançadas
+### Chain of Thought (CoT)
+Incentive o modelo a raciocinar passo a passo antes de chegar à conclusão final. Isso eleva substancialmente a acurácia em tarefas lógicas e matemáticas.
+
+### Role Prompting
+Atribua uma persona especializada ao assistente. Por exemplo: "Aja como um engenheiro sênior de infraestrutura especialista em Kubernetes".`
+    };
+
+    // State Variables
+    let currentStrategy = 'size';
+    let currentView = 'cards';
+    let generatedChunks = [];
+
+    // DOM Elements
+    const inputText = document.getElementById('inputText');
+    const charCount = document.getElementById('charCount');
+    const wordCount = document.getElementById('wordCount');
+    const tokenCount = document.getElementById('tokenCount');
+    const chunksContainer = document.getElementById('chunksContainer');
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+
+    // Stats Elements
+    const statTotalChunks = document.getElementById('statTotalChunks');
+    const statAvgChars = document.getElementById('statAvgChars');
+    const statAvgTokens = document.getElementById('statAvgTokens');
+    const statMinMax = document.getElementById('statMinMax');
+
+    // --- Initialization ---
+    window.addEventListener('DOMContentLoaded', () => {
+      loadPreset('rag');
+      setupInputListeners();
+    });
+
+    function setupInputListeners() {
+      inputText.addEventListener('input', () => {
+        updateInputCounters();
+        runChunking();
+      });
+
+      document.getElementById('clearTextBtn').addEventListener('click', () => {
+        inputText.value = '';
+        updateInputCounters();
+        runChunking();
+        showToast('Texto limpo.');
+      });
+    }
+
+    function updateInputCounters() {
+      const text = inputText.value;
+      const chars = text.length;
+      const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+      // Approximate token estimation: ~4 chars per token on average for western languages
+      const tokens = Math.ceil(chars / 4);
+
+      charCount.textContent = `${chars.toLocaleString()} caracteres`;
+      wordCount.textContent = `${words.toLocaleString()} palavras`;
+      tokenCount.textContent = `~${tokens.toLocaleString()} tokens`;
+    }
+
+    function loadPreset(key) {
+      if (PRESETS[key]) {
+        inputText.value = PRESETS[key];
+        updateInputCounters();
+        if (key === 'juridico') {
+          switchStrategy('symbol');
+          document.getElementById('symbolInput').value = '---';
+        } else if (key === 'dialogo') {
+          switchStrategy('lines');
+          document.getElementById('lineMode').value = 'single_line';
+          document.getElementById('lineGroupRange').value = 2;
+          updateRange('lineGroupRange', 'lineGroupVal');
+        } else if (key === 'markdown') {
+          switchStrategy('recursive');
+        } else {
+          switchStrategy('size');
+        }
+        runChunking();
+        showToast(`Preset carregado: ${key.toUpperCase()}`);
+      }
+    }
+
+    function switchStrategy(strategyKey) {
+      currentStrategy = strategyKey;
+
+      // Update Tab Buttons
+      document.querySelectorAll('.strategy-btn').forEach(btn => {
+        if (btn.getAttribute('data-strategy') === strategyKey) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // Update Subpanels
+      document.querySelectorAll('.strategy-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      const activePanel = document.getElementById(`strat-${strategyKey}`);
+      if (activePanel) activePanel.classList.add('active');
+
+      const labels = {
+        size: 'Tamanho Fixo com Janela Deslizante',
+        punctuation: 'Pontuação / Sentenças',
+        symbol: 'Símbolo / Delimitador Customizado',
+        lines: 'Linhas / Parágrafos',
+        recursive: 'Divisão Recursiva Inteligente'
+      };
+      document.getElementById('currentStratLabel').textContent = labels[strategyKey] || strategyKey;
+
+      runChunking();
+    }
+
+    function updateRange(rangeId, valId) {
+      const val = document.getElementById(rangeId).value;
+      document.getElementById(valId).textContent = val;
+    }
+
+    function setSymbol(symbolStr) {
+      document.getElementById('symbolInput').value = symbolStr;
+      if (symbolStr.startsWith('\\')) {
+        document.getElementById('isRegex').checked = true;
+      }
+      runChunking();
+    }
+
+    // --- Core Chunking Algorithms ---
+    function runChunking() {
+      const text = inputText.value;
+      if (!text || text.trim() === '') {
+        generatedChunks = [];
+        renderOutput();
+        updateStats();
+        return;
+      }
+
+      let chunks = [];
+
+      switch (currentStrategy) {
+        case 'size':
+          chunks = chunkBySize(text);
+          break;
+        case 'punctuation':
+          chunks = chunkByPunctuation(text);
+          break;
+        case 'symbol':
+          chunks = chunkBySymbol(text);
+          break;
+        case 'lines':
+          chunks = chunkByLines(text);
+          break;
+        case 'recursive':
+          chunks = chunkRecursive(text);
+          break;
+        default:
+          chunks = chunkBySize(text);
+      }
+
+      generatedChunks = chunks;
+      renderOutput();
+      updateStats();
+    }
+
+    // 1. Chunk by Size (Fixed window with overlap)
+    function chunkBySize(text) {
+      const unit = document.getElementById('sizeUnit').value;
+      const size = parseInt(document.getElementById('sizeRange').value, 10);
+      let overlap = parseInt(document.getElementById('overlapRange').value, 10);
+
+      // Overlap cannot be >= size
+      if (overlap >= size) {
+        overlap = size - 1;
+      }
+
+      const step = size - overlap;
+      const results = [];
+
+      if (unit === 'chars') {
+        let start = 0;
+        let index = 1;
+        while (start < text.length) {
+          const end = Math.min(start + size, text.length);
+          const chunkContent = text.slice(start, end);
+          if (chunkContent.trim().length > 0) {
+            results.push({
+              id: index++,
+              text: chunkContent,
+              startIndex: start,
+              endIndex: end,
+              overlapBefore: start > 0 ? overlap : 0
+            });
+          }
+          if (end >= text.length) break;
+          start += step;
+        }
+      } else if (unit === 'words') {
+        const words = text.split(/(\s+)/); // preserves whitespace tokens
+        // extract pure words and their ranges
+        const pureWordTokens = [];
+        let curChar = 0;
+        for (let i = 0; i < words.length; i++) {
+          const w = words[i];
+          if (w.trim().length > 0) {
+            pureWordTokens.push({ word: w, start: curChar, end: curChar + w.length });
+          }
+          curChar += w.length;
+        }
+
+        let wordStart = 0;
+        let index = 1;
+        while (wordStart < pureWordTokens.length) {
+          const wordEnd = Math.min(wordStart + size, pureWordTokens.length);
+          const sliceWords = pureWordTokens.slice(wordStart, wordEnd);
+          const startIdx = sliceWords[0].start;
+          const endIdx = sliceWords[sliceWords.length - 1].end;
+          const content = text.slice(startIdx, endIdx);
+
+          results.push({
+            id: index++,
+            text: content,
+            startIndex: startIdx,
+            endIndex: endIdx,
+            overlapBefore: wordStart > 0 ? overlap : 0
+          });
+
+          if (wordEnd >= pureWordTokens.length) break;
+          wordStart += (size - overlap);
+        }
+      } else if (unit === 'tokens') {
+        // Token estimation: approx 4 characters per token
+        const charSize = size * 4;
+        const charOverlap = overlap * 4;
+        const charStep = Math.max(1, charSize - charOverlap);
+        let start = 0;
+        let index = 1;
+
+        while (start < text.length) {
+          const end = Math.min(start + charSize, text.length);
+          const chunkContent = text.slice(start, end);
+          if (chunkContent.trim().length > 0) {
+            results.push({
+              id: index++,
+              text: chunkContent,
+              startIndex: start,
+              endIndex: end,
+              overlapBefore: start > 0 ? charOverlap : 0
+            });
+          }
+          if (end >= text.length) break;
+          start += charStep;
+        }
+      }
+
+      return results;
+    }
+
+    // 2. Chunk by Punctuation
+    function chunkByPunctuation(text) {
+      const punctType = document.getElementById('punctType').value;
+      const groupCount = parseInt(document.getElementById('punctGroupRange').value, 10);
+      const keepPunct = document.getElementById('keepPunct').checked;
+
+      let splitRegex;
+      if (punctType === 'sentence') {
+        splitRegex = /([^.!?…]+[.!?…]+)/g;
+      } else if (punctType === 'comma') {
+        splitRegex = /([^.!?,;:…]+[.!?…,:;]+)/g;
+      } else {
+        splitRegex = /([^.]+\.+)/g;
+      }
+
+      const sentences = [];
+      let match;
+      let lastIndex = 0;
+
+      while ((match = splitRegex.exec(text)) !== null) {
+        let sent = match[0];
+        const start = match.index;
+        const end = match.index + sent.length;
+        if (!keepPunct) {
+          sent = sent.replace(/[.!?,;:…]+$/, '');
+        }
+        if (sent.trim().length > 0) {
+          sentences.push({ text: sent.trim(), start, end });
+        }
+        lastIndex = end;
+      }
+
+      // Check remaining text after last punctuation
+      if (lastIndex < text.length) {
+        const remaining = text.slice(lastIndex);
+        if (remaining.trim().length > 0) {
+          sentences.push({ text: remaining.trim(), start: lastIndex, end: text.length });
+        }
+      }
+
+      if (sentences.length === 0) {
+        return [{ id: 1, text: text, startIndex: 0, endIndex: text.length }];
+      }
+
+      // Group sentences
+      const results = [];
+      let index = 1;
+      for (let i = 0; i < sentences.length; i += groupCount) {
+        const slice = sentences.slice(i, i + groupCount);
+        const joinedText = slice.map(s => s.text).join(' ');
+        results.push({
+          id: index++,
+          text: joinedText,
+          startIndex: slice[0].start,
+          endIndex: slice[slice.length - 1].end
+        });
+      }
+
+      return results;
+    }
+
+    // 3. Chunk by Symbol / Custom Delimiter
+    function chunkBySymbol(text) {
+      const symbolVal = document.getElementById('symbolInput').value;
+      const isRegex = document.getElementById('isRegex').checked;
+      const trim = document.getElementById('trimChunks').checked;
+
+      if (!symbolVal) {
+        return [{ id: 1, text, startIndex: 0, endIndex: text.length }];
+      }
+
+      let parts = [];
+      try {
+        let delimiterPattern = isRegex ? new RegExp(symbolVal, 'g') : symbolVal;
+        
+        if (isRegex) {
+          // Track matches and indices
+          let lastIdx = 0;
+          let m;
+          const re = new RegExp(symbolVal, 'g');
+          while ((m = re.exec(text)) !== null) {
+            const part = text.slice(lastIdx, m.index);
+            parts.push({ text: part, start: lastIdx, end: m.index });
+            lastIdx = m.index + m[0].length;
+            if (m.index === re.lastIndex) re.lastIndex++; // prevent infinite loop
+          }
+          if (lastIdx <= text.length) {
+            parts.push({ text: text.slice(lastIdx), start: lastIdx, end: text.length });
+          }
+        } else {
+          // Plain string split with offset tracking
+          let start = 0;
+          let pos;
+          while ((pos = text.indexOf(symbolVal, start)) !== -1) {
+            parts.push({
+              text: text.slice(start, pos),
+              start: start,
+              end: pos
+            });
+            start = pos + symbolVal.length;
+          }
+          parts.push({
+            text: text.slice(start),
+            start: start,
+            end: text.length
+          });
+        }
+      } catch (err) {
+        console.error('Regex error:', err);
+        return [{ id: 1, text: `Erro na Expressão Regular: ${err.message}`, startIndex: 0, endIndex: 0 }];
+      }
+
+      const results = [];
+      let index = 1;
+      for (const p of parts) {
+        let str = p.text;
+        if (trim) str = str.trim();
+        if (str.length > 0 || !trim) {
+          results.push({
+            id: index++,
+            text: str,
+            startIndex: p.start,
+            endIndex: p.end
+          });
+        }
+      }
+
+      return results.length > 0 ? results : [{ id: 1, text, startIndex: 0, endIndex: text.length }];
+    }
+
+    // 4. Chunk by Lines / Paragraphs
+    function chunkByLines(text) {
+      const mode = document.getElementById('lineMode').value;
+      const groupCount = parseInt(document.getElementById('lineGroupRange').value, 10);
+
+      const delimiter = mode === 'paragraph' ? /\n\s*\n/ : /\r?\n/;
+      const rawUnits = text.split(delimiter);
+
+      const validUnits = [];
+      let currentOffset = 0;
+
+      for (let unit of rawUnits) {
+        const trimmed = unit.trim();
+        if (trimmed.length > 0) {
+          validUnits.push({ text: trimmed, offset: currentOffset });
+        }
+        currentOffset += unit.length + 1;
+      }
+
+      const results = [];
+      let index = 1;
+      for (let i = 0; i < validUnits.length; i += groupCount) {
+        const slice = validUnits.slice(i, i + groupCount);
+        const combined = slice.map(s => s.text).join(mode === 'paragraph' ? '\n\n' : '\n');
+        results.push({
+          id: index++,
+          text: combined,
+          startIndex: slice[0].offset,
+          endIndex: slice[slice.length - 1].offset + slice[slice.length - 1].text.length
+        });
+      }
+
+      return results;
+    }
+
+    // 5. Recursive Character Splitter (LangChain/LlamaIndex algorithm simulation)
+    function chunkRecursive(text) {
+      const targetSize = parseInt(document.getElementById('recSizeRange').value, 10);
+      const targetOverlap = parseInt(document.getElementById('recOverlapRange').value, 10);
+      const separators = ["\n\n", "\n", " ", ""];
+
+      function splitTextRecursively(textToSplit, sepIndex) {
+        if (textToSplit.length <= targetSize || sepIndex >= separators.length) {
+          return [textToSplit];
+        }
+
+        const separator = separators[sepIndex];
+        let splits;
+        if (separator === "") {
+          splits = textToSplit.split("");
+        } else {
+          splits = textToSplit.split(separator);
+        }
+
+        const goodSplits = [];
+        for (let s of splits) {
+          if (s.length <= targetSize) {
+            goodSplits.push(s);
+          } else {
+            const smaller = splitTextRecursively(s, sepIndex + 1);
+            goodSplits.push(...smaller);
+          }
+        }
+
+        // Merge splits respecting targetSize and targetOverlap
+        const finalChunks = [];
+        let currentChunk = [];
+        let currentLen = 0;
+
+        for (let piece of goodSplits) {
+          const pieceLen = piece.length + (currentChunk.length > 0 ? separator.length : 0);
+
+          if (currentLen + pieceLen <= targetSize) {
+            currentChunk.push(piece);
+            currentLen += pieceLen;
+          } else {
+            if (currentChunk.length > 0) {
+              finalChunks.push(currentChunk.join(separator));
+            }
+            // Overlap handling: keep recent items if within targetOverlap
+            while (currentChunk.length > 0 && currentLen > targetOverlap) {
+              const removed = currentChunk.shift();
+              currentLen -= (removed.length + (currentChunk.length > 0 ? separator.length : 0));
+            }
+            currentChunk.push(piece);
+            currentLen += piece.length + (currentChunk.length > 1 ? separator.length : 0);
+          }
+        }
+
+        if (currentChunk.length > 0) {
+          finalChunks.push(currentChunk.join(separator));
+        }
+
+        return finalChunks;
+      }
+
+      const stringChunks = splitTextRecursively(text, 0);
+      const results = [];
+      let charTrack = 0;
+
+      for (let i = 0; i < stringChunks.length; i++) {
+        const c = stringChunks[i].trim();
+        if (c.length > 0) {
+          const startIdx = text.indexOf(c, charTrack);
+          const validStart = startIdx !== -1 ? startIdx : charTrack;
+          const endIdx = validStart + c.length;
+          charTrack = validStart + Math.max(1, Math.floor(c.length / 2));
+
+          results.push({
+            id: i + 1,
+            text: c,
+            startIndex: validStart,
+            endIndex: endIdx,
+            overlapBefore: i > 0 ? targetOverlap : 0
+          });
+        }
+      }
+
+      return results;
+    }
+
+    // --- Rendering Views ---
+    function setViewMode(mode) {
+      currentView = mode;
+      document.querySelectorAll('.view-btn').forEach(btn => {
+        if (btn.getAttribute('data-view') === mode) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      renderOutput();
+    }
+
+    function renderOutput() {
+      if (generatedChunks.length === 0) {
+        chunksContainer.innerHTML = `
+          <div class="empty-state">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            <p>Nenhum chunk gerado. Digite ou cole um texto no painel à esquerda.</p>
+          </div>
+        `;
+        return;
+      }
+
+      if (currentView === 'cards') {
+        renderCardsView();
+      } else if (currentView === 'highlight') {
+        renderHighlightView();
+      } else if (currentView === 'table') {
+        renderTableView();
+      }
+    }
+
+    function renderCardsView() {
+      let html = '<div class="chunks-cards-list">';
+      generatedChunks.forEach((chunk, idx) => {
+        const charLen = chunk.text.length;
+        const words = chunk.text.split(/\s+/).filter(Boolean).length;
+        const estTokens = Math.ceil(charLen / 4);
+
+        html += `
+          <div class="chunk-card" id="chunk-card-${chunk.id}">
+            <div class="chunk-card-header">
+              <span class="chunk-badge-id">Chunk #${chunk.id}</span>
+              <div class="chunk-meta">
+                <span>${charLen} chars</span>
+                <span>•</span>
+                <span>${words} palavras</span>
+                <span>•</span>
+                <span>~${estTokens} tokens</span>
+                ${chunk.overlapBefore ? `<span class="overlap-tag">Overlap: ~${chunk.overlapBefore}</span>` : ''}
+              </div>
+            </div>
+            <div class="chunk-card-body">${escapeHTML(chunk.text)}</div>
+            <div class="chunk-card-footer">
+              <span style="font-size: 0.72rem; color: var(--text-subtle); font-family: var(--font-mono);">
+                Offset: [${chunk.startIndex ?? 0}..${chunk.endIndex ?? charLen}]
+              </span>
+              <button class="copy-btn" onclick="copyChunkText(${chunk.id})">
+                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                Copiar Chunk
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+      chunksContainer.innerHTML = html;
+    }
+
+    function renderHighlightView() {
+      let html = `
+        <div style="margin-bottom: 0.85rem; font-size: 0.8rem; color: var(--text-muted);">
+          Visão contínua em faixas coloridas para inspecionar onde cada corte ocorreu no fluxo textual original:
+        </div>
+        <div class="chunks-highlight-view">
+      `;
+
+      generatedChunks.forEach((chunk, index) => {
+        const colorClass = `chunk-color-${index % 6}`;
+        html += `<span class="chunk-span ${colorClass}" title="Chunk #${chunk.id} (${chunk.text.length} caracteres)" onclick="highlightCard(${chunk.id})">${escapeHTML(chunk.text)}</span> `;
+      });
+
+      html += '</div>';
+      chunksContainer.innerHTML = html;
+    }
+
+    function renderTableView() {
+      let html = `
+        <div class="chunks-table-view">
+          <table class="chunks-table">
+            <thead>
+              <tr>
+                <th style="width: 70px;">ID</th>
+                <th style="width: 100px;">Caracteres</th>
+                <th style="width: 90px;">Tokens</th>
+                <th>Conteúdo do Chunk</th>
+                <th style="width: 80px; text-align: right;">Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      generatedChunks.forEach(chunk => {
+        const charLen = chunk.text.length;
+        const estTokens = Math.ceil(charLen / 4);
+        html += `
+          <tr>
+            <td><span class="chunk-badge-id">#${chunk.id}</span></td>
+            <td>${charLen}</td>
+            <td>~${estTokens}</td>
+            <td style="font-size: 0.8rem; line-height: 1.4; color: var(--text-muted);">${escapeHTML(chunk.text)}</td>
+            <td style="text-align: right;">
+              <button class="btn-sm" onclick="copyChunkText(${chunk.id})" style="padding: 0.25rem 0.5rem;">Copiar</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+      chunksContainer.innerHTML = html;
+    }
+
+    function highlightCard(chunkId) {
+      showToast(`Chunk selecionado: #${chunkId}`);
+    }
+
+    // --- Statistics ---
+    function updateStats() {
+      const total = generatedChunks.length;
+      statTotalChunks.textContent = total;
+
+      if (total === 0) {
+        statAvgChars.textContent = '0';
+        statAvgTokens.textContent = '0';
+        statMinMax.textContent = '0 / 0';
+        return;
+      }
+
+      let totalChars = 0;
+      let minChars = Infinity;
+      let maxChars = 0;
+
+      generatedChunks.forEach(c => {
+        const len = c.text.length;
+        totalChars += len;
+        if (len < minChars) minChars = len;
+        if (len > maxChars) maxChars = len;
+      });
+
+      const avgChars = Math.round(totalChars / total);
+      const avgTokens = Math.ceil(avgChars / 4);
+
+      statAvgChars.textContent = avgChars.toLocaleString();
+      statAvgTokens.textContent = `~${avgTokens.toLocaleString()}`;
+      statMinMax.textContent = `${minChars} / ${maxChars}`;
+    }
+
+    // --- Export & Copy Helpers ---
+    function copyChunkText(id) {
+      const chunk = generatedChunks.find(c => c.id === id);
+      if (chunk) {
+        navigator.clipboard.writeText(chunk.text).then(() => {
+          showToast(`Chunk #${id} copiado para a área de transferência!`);
+        });
+      }
+    }
+
+    function copyAllJSON() {
+      if (generatedChunks.length === 0) {
+        showToast('Nenhum dado para copiar.');
+        return;
+      }
+      const data = generatedChunks.map(c => ({
+        id: c.id,
+        content: c.text,
+        characters: c.text.length,
+        tokens_est: Math.ceil(c.text.length / 4),
+        startIndex: c.startIndex,
+        endIndex: c.endIndex
+      }));
+
+      navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => {
+        showToast('Todos os chunks copiados como JSON formatado!');
+      });
+    }
+
+    function exportFile(format) {
+      if (generatedChunks.length === 0) {
+        showToast('Nenhum chunk disponível para download.');
+        return;
+      }
+
+      let blob, filename;
+
+      if (format === 'json') {
+        const data = generatedChunks.map(c => ({
+          id: c.id,
+          content: c.text,
+          characters: c.text.length,
+          tokens_est: Math.ceil(c.text.length / 4)
+        }));
+        blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        filename = 'chunks_export.json';
+      } else if (format === 'txt') {
+        let content = generatedChunks.map(c => `=== CHUNK #${c.id} (${c.text.length} chars | ~${Math.ceil(c.text.length / 4)} tokens) ===\n${c.text}\n\n`).join('');
+        blob = new Blob([content], { type: 'text/plain' });
+        filename = 'chunks_export.txt';
+      } else if (format === 'csv') {
+        let csv = 'id,characters,tokens_est,content\n';
+        generatedChunks.forEach(c => {
+          const escaped = '"' + c.text.replace(/"/g, '""') + '"';
+          csv += `${c.id},${c.text.length},${Math.ceil(c.text.length / 4)},${escaped}\n`;
+        });
+        blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        filename = 'chunks_export.csv';
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`Arquivo ${filename} baixado com sucesso!`);
+    }
+
+    function showToast(message) {
+      toastMsg.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function escapeHTML(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
