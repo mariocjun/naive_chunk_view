@@ -256,7 +256,7 @@
     /* Main Workspace Grid */
     .workspace-grid {
       display: grid;
-      grid-template-columns: 460px 1fr;
+      grid-template-columns: 500px 1fr;
       gap: 1.5rem;
       align-items: start;
     }
@@ -543,7 +543,7 @@
     /* Stats Ribbon */
     .stats-ribbon {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 0.75rem;
       margin-bottom: 1.5rem;
     }
@@ -1268,6 +1268,72 @@
     }
 
     /* ============================================================
+       Escala tipográfica ampliada
+       Para deixar os textos ainda maiores ou menores, ajuste
+       apenas os valores deste bloco.
+       ============================================================ */
+    html {
+      font-size: 18px;
+    }
+
+    .nav-btn { font-size: 0.92rem; }
+    .panel-title { font-size: 1.22rem; }
+    .form-label { font-size: 0.95rem; }
+    .form-label .label-tip { font-size: 0.82rem; }
+    .preset-chip { font-size: 0.82rem; }
+    .strat-name { font-size: 0.94rem; }
+    .strat-desc { font-size: 0.78rem; }
+    .checkbox-label { font-size: 0.94rem; }
+    .range-val { font-size: 0.95rem; }
+    .btn-block { font-size: 1.02rem; }
+    .link-btn { font-size: 0.85rem; }
+
+    textarea { font-size: 1rem; min-height: 200px; }
+    input[type="text"], input[type="number"], select { font-size: 1rem; }
+    .text-counter-bar { font-size: 0.82rem; }
+
+    .stat-label { font-size: 0.8rem; }
+    .stat-val { font-size: clamp(1.15rem, 3vw, 1.65rem); }
+    .stat-unit { font-size: 0.75rem; }
+
+    .view-btn { font-size: 0.88rem; }
+    .btn-sm { font-size: 0.86rem; }
+    .search-input { font-size: 0.92rem; }
+    .search-count { font-size: 0.82rem; }
+
+    .chunk-badge-id { font-size: 0.85rem; }
+    .chunk-meta { font-size: 0.82rem; }
+    .chunk-card-body { font-size: 1rem; line-height: 1.65; }
+    .chunk-card-body.collapsed { max-height: 10rem; }
+    .chunk-offset { font-size: 0.8rem; }
+    .chunk-card-footer .copy-btn { font-size: 0.85rem; }
+    .overlap-tag { font-size: 0.78rem; }
+
+    .chunks-highlight-view { font-size: 1.05rem; line-height: 1.9; }
+    .hl-legend { font-size: 0.82rem; }
+
+    .chunks-table { font-size: 0.95rem; }
+    .chunks-table th { font-size: 0.9rem; }
+
+    .empty-state p { font-size: 1rem; }
+    .notice { font-size: 0.85rem; }
+    .field-error { font-size: 0.82rem; }
+
+    .hero-content h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); }
+    .hero-content p { font-size: 1.08rem; }
+    .hero-tag { font-size: 0.82rem; }
+
+    .edu-header h2 { font-size: 2.2rem; }
+    .edu-header p { font-size: 1.08rem; }
+    .edu-card h3 { font-size: 1.3rem; }
+    .edu-card p { font-size: 1rem; }
+    .edu-card ul li { font-size: 0.96rem; }
+    .edu-table-card h3 { font-size: 1.4rem; }
+
+    .toast { font-size: 0.95rem; }
+    footer { font-size: 0.92rem; }
+
+    /* ============================================================
        Movimento reduzido
        ============================================================ */
     @media (prefers-reduced-motion: reduce) {
@@ -1849,6 +1915,14 @@ Atribua uma persona especializada ao assistente. Por exemplo: "Aja como um engen
 
     const GROUP_KEYS = ['size', 'punctuation', 'symbol', 'lines', 'recursive'];
 
+    // Assinatura do conteúdo publicado. Sempre que o index.html muda no ar, o
+    // estado salvo é descartado e a página volta ao padrão (exemplo de RAG +
+    // configurações iniciais), em vez de restaurar o que o visitante tinha.
+    // A data de modificação resolve o caso normal; CONTENT_REVISION é a rede de
+    // segurança para servidores que não enviam Last-Modified.
+    const CONTENT_REVISION = 'r3';
+    const STATE_SIGNATURE = CONTENT_REVISION + '|' + (document.lastModified || '');
+
     const settings = readStoredSettings();
     let generatedChunks = [];
     let visibleChunks = [];
@@ -1878,7 +1952,11 @@ Atribua uma persona especializada ao assistente. Por exemplo: "Aja como um engen
     function readStoredRaw() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : null;
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        // Conteúdo novo publicado: ignora o estado anterior e volta ao padrão.
+        if (!parsed || parsed.signature !== STATE_SIGNATURE) return null;
+        return parsed;
       } catch (err) {
         return null; // modo restrito ou JSON corrompido
       }
@@ -1888,6 +1966,7 @@ Atribua uma persona especializada ao assistente. Por exemplo: "Aja como um engen
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
           version: 1,
+          signature: STATE_SIGNATURE,
           text: inputText.value,
           settings: settings
         }));
@@ -2849,7 +2928,7 @@ Atribua uma persona especializada ao assistente. Por exemplo: "Aja como um engen
           '<td><span class="chunk-badge-id">#' + chunk.id + '</span></td>' +
           '<td>' + charLen + '</td>' +
           '<td>~' + Math.ceil(charLen * TOKENS_PER_CHAR) + '</td>' +
-          '<td style="font-size: 0.8rem; line-height: 1.4; color: var(--text-muted);">' +
+          '<td style="font-size: 0.95rem; line-height: 1.5; color: var(--text-muted);">' +
             escapeAndMark(chunk.text, term) +
           '</td>' +
           '<td style="text-align: right;">' +
